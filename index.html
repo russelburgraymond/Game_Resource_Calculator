@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Guns Of Glory Resource Calculator</title>
+
+<!-- Shared menu from nav.json (no .js file needed) -->
+
+<style>
+  :root{
+    --bg0:#070A12; --bg1:#0B1020;
+    --stroke: rgba(255,255,255,.10);
+    --text:#EEF2FF;
+    --muted: rgba(238,242,255,.68);
+    --muted2: rgba(238,242,255,.48);
+    --good:#6EF3B1; --warn:#FFD07A;
+    --shadow: 0 18px 60px rgba(0,0,0,.45);
+    --r:18px;
+    --accent:#FF9933;
+    --accent2:#FFD07A;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(255,153,51,.22), transparent 55%),
+      radial-gradient(900px 500px at 95% 10%, rgba(122,167,255,.18), transparent 52%),
+      radial-gradient(700px 450px at 55% 105%, rgba(110,243,177,.10), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    min-height:100vh;
+  }
+  .wrap{ max-width:1100px; margin:0 auto; padding: 0 16px 36px; }
+
+  /* Shared nav styles (nav.js) */
+  .nav-select{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding: 12px 14px;
+    border: 1px solid var(--stroke);
+    border-radius: var(--r);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    margin: 18px auto 14px;
+    max-width:1100px;
+  }
+  .nav-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .nav-select label{ font-size:12px; color: var(--muted); white-space:nowrap; }
+  select{
+    background: rgba(0,0,0,.20);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.14);
+    padding: 8px 10px;
+    border-radius: 14px;
+    cursor:pointer;
+    outline:none;
+  }
+  select:focus{
+    border-color: rgba(255,153,51,.55);
+    box-shadow: 0 0 0 3px rgba(255,153,51,.12);
+  }
+  .pill{
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--stroke);
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+    font-size: 12px;
+    white-space:nowrap;
+  }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding: 16px 14px;
+    border: 1px solid var(--stroke);
+    border-radius: var(--r);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+  }
+  .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .logo{
+    width:38px;height:38px;border-radius: 12px;
+    border: 1px solid var(--stroke);
+    background:
+      radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.40), transparent 60%),
+      linear-gradient(135deg, rgba(255,153,51,.95), rgba(255,208,122,.75));
+    box-shadow: 0 10px 30px rgba(255,153,51,.18);
+  }
+  .title{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .title h1{ margin:0; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .title p{ margin:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .grid{ display:grid; gap:14px; margin-top:14px; grid-template-columns: 1fr; }
+  @media (min-width: 950px){ .grid{ grid-template-columns: 1.12fr .88fr; } }
+
+  .card{
+    border: 1px solid var(--stroke);
+    border-radius: var(--r);
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    padding: 14px;
+  }
+  .card h2{ margin:0 0 10px; font-size:14px; }
+  .sub{ color:var(--muted); font-size:12px; margin-top:-6px; margin-bottom:10px; line-height:1.35; }
+
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .footerNote{ margin-top:10px; color:var(--muted2); font-size:12px; line-height:1.35; }
+
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  button{
+    border:0; padding:10px 12px; border-radius:14px; cursor:pointer;
+    font-weight:750; letter-spacing:.2px;
+  }
+  .btn{
+    background: linear-gradient(135deg, rgba(255,153,51,.95), rgba(255,208,122,.85));
+    color:#1A0E04;
+  }
+  .btn2{
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  input{
+    background: rgba(0,0,0,.20);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 12px;
+    padding: 8px 10px;
+    outline:none;
+    text-align:center;
+  }
+  input:focus{
+    border-color: rgba(255,153,51,.55);
+    box-shadow: 0 0 0 3px rgba(255,153,51,.12);
+  }
+
+  table{
+    width:100%;
+    border-collapse: collapse;
+    overflow:hidden;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.18);
+  }
+  th, td{
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    text-align:center;
+    font-size: 13px;
+  }
+  th{
+    color: var(--muted);
+    font-weight: 800;
+    font-size: 12px;
+    background: rgba(255,255,255,.03);
+    letter-spacing:.2px;
+    text-transform: uppercase;
+  }
+  tr:last-child td{ border-bottom:0; }
+
+  .rowgap{ margin-top: 12px; }
+  .twoCol{ display:grid; gap:12px; grid-template-columns: 1fr; }
+  @media (min-width: 950px){ .twoCol{ grid-template-columns: 1fr 1fr; } }
+
+  .noteBox{
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.18);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .noteBox h3{
+    margin:0 0 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 900;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+  }
+  .noteBox p{
+    margin:0;
+    font-size: 12px;
+    color: var(--muted2);
+    line-height: 1.35;
+  }
+
+  /* #5 repeated header rows */
+  #resourceb tr.repeatHead td{
+    color: var(--muted);
+    background: rgba(255,255,255,.04);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+  }
+
+  a{ color: var(--accent); }
+  a:visited{ color: #e9f3e9; }
+  a:hover{ color: hotpink; }
+  a:active{ color: #7aa7ff; }
+  .versionTag{
+  font-size:12px;
+  font-weight:700;
+  color:#FF9933;
+  margin-left:8px;
+  padding:3px 8px;
+  border-radius:10px;
+  background:rgba(255,153,51,.15);
+  border:1px solid rgba(255,153,51,.35);
+}
+</style>
+
+<script>
+  // Shared navigation loaded from nav.json
+  // IMPORTANT: Many browsers block loading local files with fetch() when opened as file://
+  // If you open this calculator directly from disk and the menu doesn't populate, run a tiny local server
+  // (e.g., from this folder: python -m http.server 8000) and open http://localhost:8000/
+  async function renderCalculatorNavFromJson({ currentUrl = "", jsonUrl = "./nav.json" } = {}) {
+    const fallback = [
+      { label: "Select a game", url: "" },
+      { label: "Guns Of Glory", url: "./index.html" },
+      { label: "Last Fortress: Underground", url: "./lfu.html" },
+      { label: "Atlas Earth", url: "./ae.html" },
+    ];
+
+    let games = fallback;
+    try {
+      const resp = await fetch(jsonUrl, { cache: "no-store" });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && Array.isArray(data.games) && data.games.length) games = data.games;
+      }
+    } catch (e) {
+      // Fetch failed (common with file://). We'll use fallback so the page still works.
+    }
+
+    const wrap = document.createElement("div");
+    wrap.className = "nav-select";
+    wrap.innerHTML = `
+      <div class="nav-left">
+        <label for="navSelect">Other Resource Calculators:</label>
+        <select id="navSelect" aria-label="Other Resource Calculators"></select>
+      </div>
+      <div class="pill">Autosave: <b>On</b></div>
+    `;
+
+    const select = wrap.querySelector("#navSelect");
+    for (const g of games) {
+      const opt = document.createElement("option");
+      opt.value = g.url;
+      opt.textContent = g.label;
+      if (g.url && g.url === currentUrl) opt.selected = true;
+      select.appendChild(opt);
+    }
+
+    select.addEventListener("change", () => {
+      const url = select.value;
+      if (url) window.location = url;
+      else select.value = currentUrl;
+    });
+
+    document.body.insertBefore(wrap, document.body.firstChild);
+  }
+</script>
+
+<script>
+  // ============================
+  // LocalStorage
+  // ============================
+  const SAVE_KEY = "gog_resource_calc_saved_v3";
+
+  function saveAll() {
+    const data = {
+      farm: document.getElementById("farm").value,
+      values: {}
+    };
+    document.querySelectorAll("input, select").forEach(el => {
+      if (!el.id) return;
+      if (el.id === "navSelect") return;
+      data.values[el.id] = el.value;
+    });
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }
+
+  function loadAll() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (data?.values) {
+        for (const [id, val] of Object.entries(data.values)) {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        }
+      }
+      if (data?.farm) document.getElementById("farm").value = data.farm;
+    } catch {}
+  }
+
+  function clearSaved() {
+    localStorage.removeItem(SAVE_KEY);
+
+    // Reset inputs (matches original intent)
+    document.querySelectorAll("input.zero").forEach(el => el.value = "0");
+    document.getElementById("upfood").value = "0";
+    document.getElementById("upwood").value = "0";
+    document.getElementById("upiron").value = "0";
+    document.getElementById("upsilver").value = "0";
+    document.getElementById("qucalca").value = "0";
+    document.getElementById("qucalcb").value = "0";
+    document.getElementById("totqcalc").textContent = "0";
+    ["food","wood","iron","silver"].forEach(r => {
+      document.getElementById("atot"+r).textContent = "0";
+    });
+    recalcAll();
+    alert("Saved values cleared for this device/browser.");
+  }
+
+  // ============================
+  // Helpers
+  // ============================
+  function fmt(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num)) return "0";
+    return num.toLocaleString("en");
+  }
+  function toNum(v) {
+    const s = String(v ?? "").replace(/,/g,"").trim();
+    if (s === "") return 0;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : NaN;
+  }
+
+  // ============================
+  // Calculations
+  // ============================
+  function doup(){
+    const upres = ["upfood", "upwood", "upiron", "upsilver"];
+    const ndres = ["needf", "needw", "needi", "needs"];
+
+    for (let i = 0; i < upres.length; i++){
+      const res = toNum(document.getElementById(upres[i]).value);
+      if (Number.isNaN(res)){
+        alert("You entered an illegal character in Upgrade Cost.");
+        return;
+      }
+      document.getElementById(ndres[i]).textContent = fmt(res);
+    }
+    saveAll();
+  }
+
+  function qcalc(){
+    const a = toNum(document.getElementById("qucalca").value);
+    const b = toNum(document.getElementById("qucalcb").value);
+    if (Number.isNaN(a) || Number.isNaN(b)){
+      alert("You entered an illegal character in Quick Calculator.");
+      return;
+    }
+    document.getElementById("totqcalc").textContent = fmt(a * b);
+    saveAll();
+  }
+
+  function domath(rsource){
+    const elements = document.getElementsByName(rsource);
+    let bagTotal = 0;
+
+    for (let i = 0; i < elements.length; i++) {
+      const qty = toNum(elements[i].value);
+      if (Number.isNaN(qty)){
+        alert("You entered an illegal character in Resource Items in bag.");
+        return;
+      }
+      const mult = toNum(elements[i].dataset.mult);
+      bagTotal += qty * mult;
+    }
+
+    // total of bag items only
+    document.getElementById("atot" + rsource).textContent = fmt(bagTotal);
+
+    // amount listed up top
+    const tpop = toNum(document.getElementById("ppd" + rsource).value);
+    if (Number.isNaN(tpop)){
+      alert("You entered an illegal character in Amount listed up top.");
+      return;
+    }
+    let total = bagTotal + tpop;
+
+    // warehouse protected for farms (not main)
+    const act = document.getElementById("farm").value;
+    if (act !== "main"){
+      const wprot = toNum(document.getElementById("wh" + rsource).value);
+      if (Number.isNaN(wprot)){
+        alert("You entered an illegal character in Warehouse Protected.");
+        return;
+      }
+      total = total - wprot;
+      if (total < 0) total = 0;
+    }
+
+    // write account row value
+    document.getElementById(act + rsource).textContent = fmt(total);
+
+    // sum all accounts
+    const estates = ["main", "farm1", "farm2", "farm3", "farm4", "farm5"];
+    let sumAll = 0;
+    for (let i = 0; i < estates.length; i++) {
+      const cell = document.getElementById(estates[i] + rsource).textContent.replace(/,/g,"");
+      sumAll += toNum(cell) || 0;
+    }
+    document.getElementById("tot" + rsource).textContent = fmt(sumAll);
+
+    saveAll();
+  }
+
+  function clearfields(){
+    document.querySelectorAll("input.zero").forEach(el => el.value = "0");
+    ["food","wood","iron","silver"].forEach(r => document.getElementById("atot"+r).textContent = "0");
+    saveAll();
+  }
+
+  function recalcAll(){
+    doup();
+    qcalc();
+    ["food","wood","iron","silver"].forEach(domath);
+  }
+
+  // ============================
+  // #5 Header repeating
+  // ============================
+  function repeatBagHeadersEvery(n = 8){
+    const table = document.getElementById("resourceb");
+    if(!table) return;
+
+    // Remove old repeats
+    table.querySelectorAll("tr.repeatHead").forEach(tr => tr.remove());
+
+    const allRows = Array.from(table.querySelectorAll("tr"));
+    if(allRows.length < 3) return;
+
+    // First row is the header (Item / Food / Wood / Iron / Silver)
+    const headerRow = allRows[0];
+    const headerHTML = headerRow.innerHTML;
+
+    // Collect "data rows" until we hit "Total Entered"
+    const dataRows = [];
+    for(let i = 1; i < allRows.length; i++){
+      const txt = (allRows[i].textContent || "").replace(/\s+/g," ").trim().toLowerCase();
+      if(txt.includes("total entered")) break;
+      // Skip any manual header-like rows if you ever add them
+      if(txt === "item food wood iron silver") continue;
+      dataRows.push(allRows[i]);
+    }
+
+    for(let i = n; i < dataRows.length; i += n){
+      const tr = document.createElement("tr");
+      tr.className = "repeatHead";
+      tr.innerHTML = headerHTML;
+      const parent = dataRows[i].parentNode;
+      parent.insertBefore(tr, dataRows[i]);
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    await renderCalculatorNavFromJson({ currentUrl: "./index.html", jsonUrl: "./nav.json" });
+
+    loadAll();
+    recalcAll();
+    repeatBagHeadersEvery(8);
+
+    // gentle autosave on input
+    document.querySelectorAll("input, select").forEach(el => {
+      el.addEventListener("input", () => saveAll());
+      el.addEventListener("change", () => saveAll());
+    });
+
+    // If the account dropdown changes, mirror original behavior:
+    document.getElementById("farm").addEventListener("change", () => {
+      clearfields();
+      recalcAll();
+      repeatBagHeadersEvery(8);
+    });
+  });
+</script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+			<h1>
+			Guns Of Glory Resource Calculator
+			<span class="versionTag">v3.0</span>
+			</h1>
+          <p>Totals per account + lootable farms + upgrade cost check </p>
+        </div>
+      </div>
+      <div class="pill mono">Repeat headers: <b>Every 8 rows</b></div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card">
+        <h2>Final Count Grid</h2>
+        <div class="sub">Totals per account. “Lootable” farms subtract Warehouse Protected (Item #4).</div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Estate</th><th>Food</th><th>Wood</th><th>Iron</th><th>Silver</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">Main</td>
+              <td><div id="mainfood">0</div></td>
+              <td><div id="mainwood">0</div></td>
+              <td><div id="mainiron">0</div></td>
+              <td><div id="mainsilver">0</div></td>
+            </tr>
+            <tr><td colspan="5" class="mono" style="color:var(--muted);">Lootable</td></tr>
+            <tr>
+              <td class="mono">Farm 1</td>
+              <td><div id="farm1food">0</div></td>
+              <td><div id="farm1wood">0</div></td>
+              <td><div id="farm1iron">0</div></td>
+              <td><div id="farm1silver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Farm 2</td>
+              <td><div id="farm2food">0</div></td>
+              <td><div id="farm2wood">0</div></td>
+              <td><div id="farm2iron">0</div></td>
+              <td><div id="farm2silver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Farm 3</td>
+              <td><div id="farm3food">0</div></td>
+              <td><div id="farm3wood">0</div></td>
+              <td><div id="farm3iron">0</div></td>
+              <td><div id="farm3silver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Farm 4</td>
+              <td><div id="farm4food">0</div></td>
+              <td><div id="farm4wood">0</div></td>
+              <td><div id="farm4iron">0</div></td>
+              <td><div id="farm4silver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Farm 5</td>
+              <td><div id="farm5food">0</div></td>
+              <td><div id="farm5wood">0</div></td>
+              <td><div id="farm5iron">0</div></td>
+              <td><div id="farm5silver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Totals</td>
+              <td><div id="totfood">0</div></td>
+              <td><div id="totwood">0</div></td>
+              <td><div id="totiron">0</div></td>
+              <td><div id="totsilver">0</div></td>
+            </tr>
+            <tr>
+              <td class="mono">Upgrade Cost</td>
+              <td><div id="needf">0</div></td>
+              <td><div id="needw">0</div></td>
+              <td><div id="needi">0</div></td>
+              <td><div id="needs">0</div></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="rowgap twoCol">
+          <div class="noteBox">
+            <h3>Quick Calculator</h3>
+            <div class="mono" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <span>A</span>
+              <input id="qucalca" size="8" value="0" onblur="qcalc()" />
+              <span>×</span>
+              <input id="qucalcb" size="8" value="0" onblur="qcalc()" />
+              <span>=</span>
+              <span id="totqcalc" class="mono">0</span>
+            </div>
+          </div>
+
+          <div class="noteBox">
+            <h3>Actions</h3>
+            <p>Switch accounts in Item #2 to fill each farm/main. Totals stay in the grid.</p>
+            <div class="controls">
+              <button class="btn" onclick="recalcAll(); repeatBagHeadersEvery(8);">Recalculate All</button>
+              <button class="btn2" onclick="clearfields(); recalcAll(); repeatBagHeadersEvery(8);">Clear Current Account Inputs</button>
+              <button class="btn2" onclick="clearSaved()">Clear Saved</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rowgap">
+          <h2>1) Cost of upgrade</h2>
+          <div class="sub">Enter upgrade cost to compare against your totals at a glance.</div>
+
+          <table>
+            <thead><tr><th>Food</th><th>Wood</th><th>Iron</th><th>Silver</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><input size="12" value="0" id="upfood" onblur="doup()" /></td>
+                <td><input size="12" value="0" id="upwood" onblur="doup()" /></td>
+                <td><input size="12" value="0" id="upiron" onblur="doup()" /></td>
+                <td><input size="12" value="0" id="upsilver" onblur="doup()" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rowgap">
+          <h2>2) Account</h2>
+          <div class="sub">Finish entries for an account before switching (switching resets inputs, totals remain).</div>
+
+          <select id="farm">
+            <option value="main">Main</option>
+            <option value="farm1">Farm 1</option>
+            <option value="farm2">Farm 2</option>
+            <option value="farm3">Farm 3</option>
+            <option value="farm4">Farm 4</option>
+            <option value="farm5">Farm 5</option>
+          </select>
+        </div>
+
+        <div class="rowgap">
+          <h2>3) Amount listed up top</h2>
+          <div class="sub">What you already have opened on that account.</div>
+
+          <table>
+            <thead><tr><th>Food</th><th>Wood</th><th>Iron</th><th>Silver</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><input size="12" class="zero" id="ppdfood" value="0" onblur="domath('food')" /></td>
+                <td><input size="12" class="zero" id="ppdwood" value="0" onblur="domath('wood')" /></td>
+                <td><input size="12" class="zero" id="ppdiron" value="0" onblur="domath('iron')" /></td>
+                <td><input size="12" class="zero" id="ppdsilver" value="0" onblur="domath('silver')" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rowgap">
+          <h2>4) Warehouse Protected</h2>
+          <div class="sub">Skip for Main. For farms, subtracts protected resources so the grid shows lootable amounts.</div>
+
+          <table>
+            <thead><tr><th>Food</th><th>Wood</th><th>Iron</th><th>Silver</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><input size="12" class="zero" id="whfood" value="0" onblur="domath('food')" /></td>
+                <td><input size="12" class="zero" id="whwood" value="0" onblur="domath('wood')" /></td>
+                <td><input size="12" class="zero" id="whiron" value="0" onblur="domath('iron')" /></td>
+                <td><input size="12" class="zero" id="whsilver" value="0" onblur="domath('silver')" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="rowgap">
+          <h2>5) Resource Items in bag</h2>
+          <div class="sub">Enter quantities. Each box multiplies qty × item value. Headers repeat every 8 rows.</div>
+
+          <table id="resourceb">
+            <tr><th>Item</th><th>Food</th><th>Wood</th><th>Iron</th><th>Silver</th></tr>
+
+            <tr><td class="mono">50</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="50" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">150</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="150" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">200</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="200" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">250</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="250" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">500</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="500" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">600</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="600" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">1,000</td>
+              <td><input class="zero" name="food" data-mult="1000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="1000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td><input class="zero" name="iron" data-mult="1000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">2,000</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="2000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">2,500</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="2500" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">3,000</td>
+              <td><input class="zero" name="food" data-mult="3000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="3000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr><td class="mono">5,000</td>
+              <td><input class="zero" name="food" data-mult="5000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="5000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr><td class="mono">6,000</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="6000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">10,000</td>
+              <td><input class="zero" name="food" data-mult="10000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="10000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td><input class="zero" name="iron" data-mult="10000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">25,000</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="25000" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">30,000</td>
+              <td><input class="zero" name="food" data-mult="30000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="30000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td><input class="zero" name="iron" data-mult="30000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">50,000</td>
+              <td><input class="zero" name="food" data-mult="50000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="50000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr><td class="mono">75,000</td><td></td><td></td><td></td>
+              <td><input class="zero" name="silver" data-mult="75000" value="0" size="7" onblur="domath('silver')" /></td></tr>
+
+            <tr><td class="mono">100,000</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="100000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">150,000</td>
+              <td><input class="zero" name="food" data-mult="150000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="150000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr><td class="mono">300,000</td><td></td><td></td>
+              <td><input class="zero" name="iron" data-mult="300000" value="0" size="7" onblur="domath('iron')" /></td><td></td></tr>
+
+            <tr><td class="mono">500,000</td>
+              <td><input class="zero" name="food" data-mult="500000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="500000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr><td class="mono">1,500,000</td>
+              <td><input class="zero" name="food" data-mult="1500000" value="0" size="7" onblur="domath('food')" /></td>
+              <td><input class="zero" name="wood" data-mult="1500000" value="0" size="7" onblur="domath('wood')" /></td>
+              <td></td><td></td></tr>
+
+            <tr>
+              <td class="mono">Total Entered</td>
+              <td><div id="atotfood">0</div></td>
+              <td><div id="atotwood">0</div></td>
+              <td><div id="atotiron">0</div></td>
+              <td><div id="atotsilver">0</div></td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="rowgap">
+          <h2>6) Do another account</h2>
+          <div class="sub">Return to Item #2 and select another account. Switching resets items #3–#5 inputs, but totals remain in the grid.</div>
+        </div>
+
+        <div class="footerNote">
+          Created by: <b>Sir Fart Knocker</b> (GoG Kingdom 64) • Suggestions: <span class="mono">russelburgraymond@gmail.com</span><br/>
+          <a href="./indexchange.html" target="_blank" rel="noopener">Change Log</a>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card">
+        <h2>How to use</h2>
+        <div class="sub">Same flow as your original tool, just cleaner and easier to maintain.</div>
+
+        <div class="noteBox">
+          <h3>Typical workflow</h3>
+          <p>
+            1) Choose Account (Item #2).<br/>
+            2) Enter “Amount listed up top” (Item #3).<br/>
+            3) Enter Warehouse Protected for farms (Item #4).<br/>
+            4) Enter bag quantities (Item #5).<br/>
+            5) Repeat for next farm/main.
+          </p>
+        </div>
+
+        <div class="rowgap noteBox">
+          <h3>Notes</h3>
+          <p>
+            • Farms show <b>lootable</b> totals (protected amounts subtracted).<br/>
+            • Header row repeats in Item #5 every 8 rows for easier reading.<br/>
+          </p>
+        </div>
+
+        <div class="rowgap noteBox">
+          <h3>Reset options</h3>
+          <p>
+            <b>Clear Current Account Inputs</b> resets item #3–#5 inputs only.<br/>
+            <b>Clear Saved</b> wipes everything saved for this page on this device.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

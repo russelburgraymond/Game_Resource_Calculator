@@ -1,0 +1,20 @@
+{
+  "games": [
+    {
+      "label": "Select a game",
+      "url": ""
+    },
+    {
+      "label": "Atlas Earth",
+      "url": "./AtlasEarth.html"
+    },
+    {
+      "label": "Guns Of Glory",
+      "url": "./index.html"
+    },
+    {
+      "label": "Last Fortress: Underground",
+      "url": "./LastFortressUnderground.html"
+    }
+  ]
+}

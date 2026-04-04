@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Earth Rent Calculator — Change Log</title>
+
+<style>
+:root{
+  --bg0:#070A12;
+  --bg1:#0B1020;
+  --text:#EEF2FF;
+  --muted: rgba(238,242,255,.68);
+  --muted2: rgba(238,242,255,.48);
+  --accent:#7AA7FF;
+  --stroke:rgba(255,255,255,.12);
+  --radius:18px;
+  --shadow: 0 18px 60px rgba(0,0,0,.45);
+}
+
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  color:var(--text);
+  background:
+    radial-gradient(900px 500px at 20% -10%, rgba(122,167,255,.20), transparent 55%),
+    radial-gradient(900px 500px at 95% 10%, rgba(165,139,255,.18), transparent 52%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  min-height:100vh;
+}
+
+.wrap{
+  max-width:900px;
+  margin:auto;
+  padding:30px 18px 36px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+  padding: 14px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+h1{
+  margin:0;
+  font-size:18px;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius: 999px;
+  border:1px solid rgba(122,167,255,.35);
+  background: rgba(122,167,255,.14);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.home{
+  background:rgba(255,255,255,.06);
+  padding:8px 12px;
+  border-radius:12px;
+  text-decoration:none;
+  color:var(--text);
+  border:1px solid var(--stroke);
+}
+
+.card{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.version{
+  color:var(--accent);
+  font-weight:900;
+  margin-bottom:6px;
+}
+
+.section{
+  margin-top:8px;
+  font-weight:850;
+  color: rgba(238,242,255,.82);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+}
+
+ul{
+  margin:6px 0 4px 18px;
+  padding:0;
+  color: rgba(238,242,255,.86);
+}
+
+li{ margin-bottom:6px; line-height:1.35; }
+
+.footer{
+  margin-top:18px;
+  font-size:13px;
+  color:var(--muted2);
+  line-height:1.4;
+}
+
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <h1>Atlas Earth Rent Calculator — Change Log</h1>
+      <div class="mono" style="color:var(--muted); font-size:12px; margin-top:4px;">
+        Calculations: parcel rent → badge boost → ad boost → SRB (50×)
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <span class="badge">v3.0</span>
+      <a class="home" href="./AtlasEarth.html">Home</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="version">Version 3.0</div>
+
+    <div class="section">Added</div>
+    <ul>
+      <li>Shared game navigation via <span class="mono">nav.json</span> (avoids blocked <span class="mono">.js</span> files).</li>
+      <li>Version badge shown in the page header.</li>
+      <li>Change Log page.</li>
+    </ul>
+
+    <div class="section">Improved</div>
+    <ul>
+      <li>Snapshot section shows three rates consistently: <b>Base</b>, <b>Base + Ad</b>, and <b>Base + SRB</b>.</li>
+      <li>Money formatting uses a consistent <span class="mono">12</span> decimal places everywhere.</li>
+      <li>Text-only styling (no external images) for easy offline sharing.</li>
+      <li>Navigation + AB pill are rendered at the very top via JS, so you only maintain links in one place.</li>
+    </ul>
+
+    <div class="section">Fixed</div>
+    <ul>
+      <li>Corrected Snapshot label typos.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="version">Earlier builds</div>
+    <ul>
+      <li>Initial release of parcel rent + badge boost + ad boost + SRB calculator.</li>
+      <li>LocalStorage saving for parcels, badges, and AB.</li>
+      <li>“Spend all AB” projection for buying parcels vs badges.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    Suggestions: <span class="mono">russelburgraymond@gmail.com</span><br/>
+  </div>
+
+</div>
+</body>
+</html>

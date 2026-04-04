@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guns Of Glory Tool - Change Log</title>
+
+<style>
+
+:root{
+--bg0:#070A12;
+--bg1:#0B1020;
+--text:#EEF2FF;
+--muted:#9CA3AF;
+--accent:#FF9933;
+--stroke:rgba(255,255,255,.12);
+--radius:18px;
+}
+
+body{
+margin:0;
+font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;
+color:var(--text);
+background:
+radial-gradient(900px 500px at 20% -10%, rgba(255,153,51,.20), transparent),
+linear-gradient(180deg,var(--bg0),var(--bg1));
+}
+
+.wrap{
+max-width:800px;
+margin:auto;
+padding:30px 18px;
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+h1{
+margin:0;
+font-size:22px;
+}
+
+.home{
+background:rgba(255,255,255,.06);
+padding:8px 12px;
+border-radius:12px;
+text-decoration:none;
+color:white;
+border:1px solid var(--stroke);
+}
+
+.card{
+background:rgba(255,255,255,.04);
+border:1px solid var(--stroke);
+border-radius:var(--radius);
+padding:16px;
+margin-bottom:14px;
+}
+
+.version{
+color:var(--accent);
+font-weight:700;
+margin-bottom:6px;
+}
+
+.section{
+margin-top:6px;
+font-weight:700;
+color:#d1d5db;
+}
+
+ul{
+margin:6px 0 4px 18px;
+padding:0;
+}
+
+li{
+margin-bottom:4px;
+}
+
+.footer{
+margin-top:25px;
+font-size:13px;
+color:var(--muted);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="header">
+<h1>Guns Of Glory Tool — Change Log</h1>
+<a class="home" href="./index.html">Home</a>
+</div>
+
+
+<div class="card">
+<div class="version">Version 3.0</div>
+
+<div class="section">Major Update</div>
+<ul>
+<li>Complete visual redesign of the calculator interface.</li>
+<li>Converted tool to a modern card-style layout for better readability.</li>
+<li>Removed external images and backgrounds so the tool is now fully text-based.</li>
+<li>Added LocalStorage support so values are automatically saved on the user's device.</li>
+<li>Added repeating column headers in the Resource Items section for easier reading of long lists.</li>
+<li>Converted resource item multipliers to a more reliable <code>data-mult</code> system.</li>
+<li>Improved calculation stability and error handling.</li>
+<li>Integrated shared game navigation system for future calculators.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 2.1.2</div>
+
+<div class="section">Added</div>
+<ul>
+<li>Link back to the main page from the Change Log.</li>
+<li>Game selection dropdown for switching between resource calculators.</li>
+<li>Suggestion email added to the bottom of the tool.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 2.1</div>
+
+<div class="section">Added</div>
+<ul>
+<li>600 Iron resource item.</li>
+<li>Improved styling for the Change Log page.</li>
+</ul>
+
+<div class="section">Fixed</div>
+<ul>
+<li>Corrected farm calculation issue where warehouse protection could produce negative totals.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 2.0</div>
+<ul>
+<li>Major visual improvements.</li>
+<li>Large JavaScript improvements and performance changes.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 1.2</div>
+<ul>
+<li>Added 400k resource item.</li>
+<li>Added 700k resource item.</li>
+<li>Added 800k resource item.</li>
+<li>Added 1M resource item.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 1.1</div>
+<ul>
+<li>Added "Amount Needed" display to quickly compare upgrade requirements.</li>
+</ul>
+</div>
+
+
+<div class="card">
+<div class="version">Version 1.0</div>
+<ul>
+<li>Initial release of the resource calculator.</li>
+<li>Added "Amount Up Top" entry fields.</li>
+<li>Added Warehouse Protection tracking.</li>
+<li>Added Lootable farm section.</li>
+<li>Added Change Log page.</li>
+<li>Improved alignment of farm and main rows.</li>
+</ul>
+</div>
+
+
+<div class="footer">
+Created by <b>Sir Fart Knocker</b> (GoG Kingdom 64)<br>
+Suggestions: ButchersScripts@gmail.com
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Last Fortress: Underground Resource Calculator</title>
+
+<!-- ============================================================
+     USER CONFIGURATION (EDIT THIS SECTION ONLY)
+============================================================ -->
+<script>
+  const TOOL_VERSION = "3.0";
+  const CHANGELOG_FILE = "./LastFortressUndergroundChange.html";
+  const SUPPORT_EMAIL = "russelburgraymond@gmail.com";
+  const CREATOR_NAME = "Big Pappa";
+
+  const RESOURCES = [
+    { key: "stone", label: "Stone" },
+    { key: "iron",  label: "Iron"  },
+    { key: "coin",  label: "Z‑Coin" },
+    { key: "power", label: "Power" },
+    { key: "exp",   label: "Exp"   }
+  ];
+
+  const ITEM_ROWS = [
+    { value: 100000, exp: true },
+    { value: 50000,  exp: true },
+    { value: 10000,  exp: true },
+    { value: 6000,   iron: true },
+    { value: 5000,   stone: true, exp: true },
+    { value: 3000,   iron: true },
+    { value: 1000,   stone: true, exp: true },
+    { value: 600,    iron: true },
+    { value: 500,    stone: true, coin: true },
+    { value: 300,    iron: true },
+    { value: 250,    power: true },
+    { value: 150,    stone: true },
+    { value: 100,    iron: true, coin: true },
+    { value: 50,     stone: true, coin: true },
+    { value: 30,     iron: true },
+    { value: 15,     coin: true },
+    { value: 10,     stone: true },
+    { value: 6,      iron: true },
+    { value: 5,      stone: true, coin: true },
+    { value: 3,      iron: true },
+    { value: 2,      stone: true, iron: true },
+    { value: 1,      stone: true, iron: true, coin: true }
+  ];
+
+  const REPEAT_HEADER_EVERY = 8;
+  const SAVE_KEY = "lfu_resource_calc_saved_v3";
+</script>
+
+<style>
+  :root{
+    --bg0:#070A12; --bg1:#0B1020;
+    --stroke: rgba(255,255,255,.10);
+    --text:#EEF2FF;
+    --muted: rgba(238,242,255,.68);
+    --muted2: rgba(238,242,255,.48);
+    --good:#6EF3B1;
+    --shadow: 0 18px 60px rgba(0,0,0,.45);
+    --r:18px;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(110,243,177,.20), transparent 55%),
+      radial-gradient(900px 500px at 95% 10%, rgba(255,153,51,.18), transparent 52%),
+      radial-gradient(700px 450px at 55% 105%, rgba(122,167,255,.14), transparent 60%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    min-height:100vh;
+  }
+  .wrap{ max-width:1100px; margin:0 auto; padding:18px 16px 36px; }
+
+  .nav-select, .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    padding: 12px 14px;
+    border: 1px solid var(--stroke);
+    border-radius: var(--r);
+    background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+  }
+  .nav-select{ margin-bottom:14px; }
+  .nav-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .nav-select label{ font-size:12px; color:var(--muted); white-space:nowrap; }
+  select{
+    background: rgba(0,0,0,.20);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.14);
+    padding: 8px 10px;
+    border-radius: 14px;
+    cursor:pointer;
+    outline:none;
+  }
+  select:focus{ border-color: rgba(110,243,177,.55); box-shadow: 0 0 0 3px rgba(110,243,177,.15); }
+
+  .pill{
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--stroke);
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+    font-size: 12px;
+    white-space:nowrap;
+  }
+
+  .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .logo{
+    width:38px;height:38px;border-radius: 12px;
+    border: 1px solid var(--stroke);
+    background:
+      radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.40), transparent 60%),
+      linear-gradient(135deg, rgba(110,243,177,.95), rgba(255,153,51,.65));
+  }
+  .title{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .title h1{ margin:0; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .title p{ margin:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .versionTag{
+    font-size:12px;
+    font-weight:800;
+    color: var(--good);
+    margin-left:8px;
+    padding:3px 8px;
+    border-radius:10px;
+    background:rgba(110,243,177,.14);
+    border:1px solid rgba(110,243,177,.35);
+    vertical-align:middle;
+  }
+
+  .grid{ display:grid; gap:14px; margin-top:14px; grid-template-columns: 1fr; }
+  @media (min-width:950px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
+
+  .card{
+    border: 1px solid var(--stroke);
+    border-radius: var(--r);
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+    padding: 14px;
+  }
+  .card h2{ margin:0 0 10px; font-size:14px; }
+  .sub{ color:var(--muted); font-size:12px; margin-top:-6px; margin-bottom:10px; line-height:1.35; }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    border-radius:16px;
+    overflow:hidden;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.18);
+  }
+  th, td{
+    padding:10px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    text-align:center;
+    font-size:13px;
+  }
+  th{
+    color: var(--muted);
+    font-weight: 900;
+    font-size: 12px;
+    background: rgba(255,255,255,.03);
+    letter-spacing:.2px;
+    text-transform: uppercase;
+  }
+  tr:last-child td{ border-bottom:0; }
+
+  input{
+    width:100%;
+    max-width: 110px;
+    background: rgba(0,0,0,.20);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 12px;
+    padding: 8px 10px;
+    outline:none;
+    text-align:center;
+  }
+  input:focus{
+    border-color: rgba(110,243,177,.55);
+    box-shadow: 0 0 0 3px rgba(110,243,177,.12);
+  }
+
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  button{
+    border:0; padding:10px 12px; border-radius:14px; cursor:pointer;
+    font-weight:750; letter-spacing:.2px;
+  }
+  .btn{
+    background: linear-gradient(135deg, rgba(110,243,177,.95), rgba(255,153,51,.70));
+    color:#06120C;
+  }
+  .btn2{
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .rightBox{
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(0,0,0,.18);
+    border-radius: 16px;
+    padding: 12px;
+  }
+  .notesList{ margin:0; padding-left: 22px; }
+  .notesList li{ margin-bottom:6px; line-height:1.4; color: var(--muted2); }
+
+  #bagTable tr.repeatHead td{
+    color: var(--muted);
+    background: rgba(255,255,255,.04);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing:.2px;
+    text-transform: uppercase;
+  }
+
+  .footerNote{ margin-top:10px; color:var(--muted2); font-size:12px; line-height:1.35; }
+  a{ color: rgba(110,243,177,.95); }
+  a:visited{ color: rgba(255,153,51,.95); }
+  a:hover{ color: hotpink; }
+</style>
+
+<script>
+  async function renderCalculatorNavFromJson(opts) {
+    const currentUrl = (opts && opts.currentUrl) || "";
+    const jsonUrl = (opts && opts.jsonUrl) || "./nav.json";
+
+    const fallback = [
+      { label: "Select a game", url: "" },
+      { label: "Guns Of Glory", url: "./index.html" },
+      { label: "Last Fortress: Underground", url: "./LastFortressUnderground.html" },
+      { label: "Atlas Earth", url: "./ae.html" },
+    ];
+
+    let games = fallback;
+    try {
+      const resp = await fetch(jsonUrl, { cache: "no-store" });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && Array.isArray(data.games) && data.games.length) games = data.games;
+      }
+    } catch (e) {}
+
+    const wrap = document.createElement("div");
+    wrap.className = "nav-select";
+    wrap.innerHTML = `
+      <div class="nav-left">
+        <label for="navSelect">Other Resource Calculators:</label>
+        <select id="navSelect" aria-label="Other Resource Calculators"></select>
+      </div>
+      <div class="pill">Autosave: <b>On</b></div>
+    `;
+
+    const select = wrap.querySelector("#navSelect");
+    for (const g of games) {
+      const opt = document.createElement("option");
+      opt.value = g.url;
+      opt.textContent = g.label;
+      if (g.url && g.url === currentUrl) opt.selected = true;
+      select.appendChild(opt);
+    }
+
+    select.addEventListener("change", () => {
+      const url = select.value;
+      if (url) window.location = url;
+      else select.value = currentUrl;
+    });
+
+    document.querySelector(".wrap").insertBefore(wrap, document.querySelector(".wrap").firstChild);
+  }
+
+  const FIELD_PREFIX = "qty_";
+  function keyFor(resKey, value) { return `${FIELD_PREFIX}${resKey}_${value}`; }
+
+  function intFromInput(el) {
+    const s = String(el.value ?? "").replace(/[^\d]/g,"");
+    if (s === "") return 0;
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function saveAll() {
+    const data = { lootable: {}, qty: {} };
+    for (const r of RESOURCES) {
+      const el = document.getElementById(`loot_${r.key}`);
+      data.lootable[r.key] = el ? el.value : "0";
+    }
+    for (const row of ITEM_ROWS) {
+      for (const r of RESOURCES) {
+        if (!row[r.key]) continue;
+        const id = keyFor(r.key, row.value);
+        const el = document.getElementById(id);
+        if (el) data.qty[id] = el.value;
+      }
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }
+
+  function loadAll() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      for (const r of RESOURCES) {
+        const el = document.getElementById(`loot_${r.key}`);
+        if (el && data?.lootable?.[r.key] !== undefined) el.value = data.lootable[r.key];
+      }
+      if (data?.qty) {
+        for (const [id, val] of Object.entries(data.qty)) {
+          const el = document.getElementById(id);
+          if (el) el.value = val;
+        }
+      }
+    } catch {}
+  }
+
+  function clearSaved() {
+    localStorage.removeItem(SAVE_KEY);
+    for (const r of RESOURCES) {
+      const el = document.getElementById(`loot_${r.key}`);
+      if (el) el.value = "0";
+    }
+    document.querySelectorAll("input[data-mult]").forEach(el => el.value = "0");
+    calculateAll();
+    alert("Saved values cleared for this device/browser.");
+  }
+
+  function calcResource(resKey) {
+    const loot = intFromInput(document.getElementById(`loot_${resKey}`));
+    let bag = 0;
+    for (const row of ITEM_ROWS) {
+      if (!row[resKey]) continue;
+      const el = document.getElementById(keyFor(resKey, row.value));
+      const qty = el ? intFromInput(el) : 0;
+      bag += qty * row.value;
+    }
+    document.getElementById(`bag_${resKey}`).textContent = bag.toLocaleString("en-US");
+    document.getElementById(`total_${resKey}`).textContent = (bag + loot).toLocaleString("en-US");
+  }
+
+  function calculateAll() {
+    for (const r of RESOURCES) calcResource(r.key);
+    saveAll();
+  }
+
+  function repeatBagHeadersEvery(n) {
+    const table = document.getElementById("bagTable");
+    if (!table) return;
+
+    table.querySelectorAll("tr.repeatHead").forEach(tr => tr.remove());
+
+    const allRows = Array.from(table.querySelectorAll("tr"));
+    if (allRows.length < 3) return;
+
+    const headerRow = allRows[0];
+    const headerHTML = headerRow.innerHTML;
+
+    const dataRows = [];
+    for (let i = 1; i < allRows.length; i++) {
+      const txt = (allRows[i].textContent || "").replace(/\s+/g," ").trim().toLowerCase();
+      if (txt.includes("bag total")) break;
+      dataRows.push(allRows[i]);
+    }
+
+    for (let i = n; i < dataRows.length; i += n) {
+      const tr = document.createElement("tr");
+      tr.className = "repeatHead";
+      tr.innerHTML = headerHTML;
+      const parent = dataRows[i].parentNode;
+      parent.insertBefore(tr, dataRows[i]);
+    }
+  }
+
+  function buildTables() {
+    const lootHead = document.getElementById("lootHead");
+    const lootRow = document.getElementById("lootRow");
+    lootHead.innerHTML = "<th>Type</th>" + RESOURCES.map(r => `<th>${r.label}</th>`).join("");
+    lootRow.innerHTML = `<td class="mono">Lootable</td>` + RESOURCES.map(r => `
+      <td><input id="loot_${r.key}" inputmode="numeric" value="0" /></td>
+    `).join("");
+
+    const bag = document.getElementById("bagTable");
+    const head = "<tr><th>Item</th>" + RESOURCES.map(r => `<th>${r.label}</th>`).join("") + "</tr>";
+    let rows = "";
+    for (const row of ITEM_ROWS) {
+      rows += `<tr><td class="mono">${row.value.toLocaleString("en-US")}</td>`;
+      for (const r of RESOURCES) {
+        if (row[r.key]) {
+          const id = keyFor(r.key, row.value);
+          rows += `<td><input id="${id}" data-mult="${row.value}" inputmode="numeric" value="0" /></td>`;
+        } else {
+          rows += `<td></td>`;
+        }
+      }
+      rows += "</tr>";
+    }
+
+    const bagTotals = `<tr><td class="mono">Bag Total</td>` + RESOURCES.map(r => `<td class="mono" id="bag_${r.key}">0</td>`).join("") + `</tr>`;
+    const grandTotals = `<tr><td class="mono">Total (Bag + Lootable)</td>` + RESOURCES.map(r => `<td class="mono" id="total_${r.key}">0</td>`).join("") + `</tr>`;
+
+    bag.innerHTML = head + rows + bagTotals + grandTotals;
+
+    document.querySelectorAll("input").forEach(el => {
+      el.addEventListener("input", () => calculateAll());
+      el.addEventListener("change", () => calculateAll());
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    await renderCalculatorNavFromJson({ currentUrl: "./LastFortressUnderground.html", jsonUrl: "./nav.json" });
+    buildTables();
+    loadAll();
+    calculateAll();
+    repeatBagHeadersEvery(REPEAT_HEADER_EVERY);
+
+    const v = document.getElementById("ver");
+    if (v) v.textContent = "v" + TOOL_VERSION;
+
+    document.getElementById("supportEmail").textContent = SUPPORT_EMAIL;
+    document.getElementById("creatorName").textContent = CREATOR_NAME;
+    document.getElementById("changeLink").setAttribute("href", CHANGELOG_FILE);
+
+    setTimeout(() => repeatBagHeadersEvery(REPEAT_HEADER_EVERY), 0);
+  });
+</script>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>Last Fortress: Underground — Resource Calculator <span class="versionTag" id="ver">v3.0</span></h1>
+          <p>Bag items + lootable amounts → totals (autosaved)</p>
+        </div>
+      </div>
+      <div class="pill">Header repeats: <b>Every 8 rows</b></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Lootable</h2>
+        <div class="sub">Enter what’s currently in your lootable area. Totals below add lootable + bag items.</div>
+
+        <table>
+          <thead><tr id="lootHead"></tr></thead>
+          <tbody><tr id="lootRow"></tr></tbody>
+        </table>
+
+        <div class="btnrow">
+          <button class="btn" onclick="calculateAll(); repeatBagHeadersEvery(REPEAT_HEADER_EVERY);">Recalculate</button>
+          <button class="btn2" onclick="clearSaved()">Clear Saved</button>
+        </div>
+
+        <div class="footerNote">
+          Created by: <b id="creatorName">Big Pappa</b> • Suggestions:
+          <span class="mono" id="supportEmail">russelburgraymond@gmail.com</span><br/>
+          <a id="changeLink" href="./LastFortressUndergroundChange.html" target="_blank" rel="noopener">Change Log</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Notes</h2>
+        <div class="sub">Tips for using this calculator offline.</div>
+        <div class="rightBox">
+          <ul class="notesList">
+            <li>Totals update as you type.</li>
+            <li>Headers repeat every 8 rows in the bag table for easier reading.</li>
+            <li>These calculators can be saved to your desktop or mobile device and opened locally in your browser.</li>
+            <li>If the top game menu doesn’t populate when opening as <span class="mono">file://</span>, run a tiny local server (example: <span class="mono">python -m http.server</span>).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h2>Resource Items in Bag</h2>
+      <div class="sub">Enter how many of each bag item you have. Totals at the bottom show Bag Total and Total (Bag + Lootable).</div>
+
+      <table id="bagTable"></table>
+    </div>
+	<div class="footerNote">
+  Created by: <b>Big Pappa</b> • Suggestions:
+  <span class="mono">russelburgraymond@gmail.com</span><br/>
+  <a href="./LastFortressUndergroundChange.html" target="_blank" rel="noopener">Change Log</a>
+</div>
+  </div>
+</body>
+</html>

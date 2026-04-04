@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Atlas Earth Rent Calculator</title>
+
+  <!-- ============================================================
+       USER CONFIGURATION (EDIT THIS SECTION ONLY)
+  ============================================================ -->
+  <script>
+    const TOOL_VERSION = "3.0";
+    const CHANGELOG_FILE = "./aechange.html";
+    const SUPPORT_EMAIL = "russelburgraymond@gmail.com";
+
+    // --- PARCEL RENT PER SECOND (USD) ---
+    const PARCEL_RATES_PER_SEC = {
+      common: 0.0000000011,
+      rare: 0.0000000016,
+      epic: 0.0000000022,
+      legendary: 0.0000000044
+    };
+
+    // --- EXPECTED RARITY PROBABILITIES (USED FOR "BUY X PARCELS" ESTIMATE) ---
+    // Must add up to 1.0
+    const RARITY_PROB = {
+      common: 0.70,
+      rare: 0.20,
+      epic: 0.09,
+      legendary: 0.01
+    };
+
+    // --- BADGE BOOST TIERS (percent) ---
+    // Use max: null for "and up"
+    const BADGE_BOOST_TIERS = [
+      { min: 0,   max: 0,    percent: 0 },
+      { min: 1,   max: 10,   percent: 5 },
+      { min: 11,  max: 30,   percent: 10 },
+      { min: 31,  max: 60,   percent: 15 },
+      { min: 61,  max: 100,  percent: 20 },
+      { min: 101, max: null, percent: 25 }
+    ];
+
+    // --- AD BOOST TIERS (multiplier) ---
+    const AD_BOOST_TIERS = [
+      { min: 1,    max: 150,  mult: 30 },
+      { min: 151,  max: 220,  mult: 20 },
+      { min: 221,  max: 290,  mult: 15 },
+      { min: 291,  max: 365,  mult: 12 },
+      { min: 366,  max: 435,  mult: 10 },
+      { min: 436,  max: 545,  mult: 8 },
+      { min: 546,  max: 625,  mult: 7 },
+      { min: 626,  max: 730,  mult: 6 },
+      { min: 731,  max: 875,  mult: 5 },
+      { min: 876,  max: 1100, mult: 4 },
+      { min: 1101, max: 1500, mult: 3 },
+      { min: 1501, max: null, mult: 2 }
+    ];
+
+    // --- COSTS (AB) ---
+    const COSTS_AB = { parcel: 100, badge: 200 };
+
+    // --- SRB ---
+    const SRB_MULTIPLIER = 50;
+
+    // --- Durations to show ---
+    const DURATIONS = [
+      { label: "1 second", seconds: 1 },
+      { label: "1 minute", seconds: 60 },
+      { label: "1 hour",   seconds: 3600 },
+      { label: "24 hours", seconds: 86400 },
+      { label: "32 hours", seconds: 115200 }
+    ];
+
+    // --- LocalStorage key ---
+    const SAVE_KEY = "ae_rent_calc_saved_v5";
+  </script>
+
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0B1020;
+      --stroke: rgba(255,255,255,.10);
+      --text:#EEF2FF;
+      --muted: rgba(238,242,255,.68);
+      --muted2: rgba(238,242,255,.48);
+      --good:#6EF3B1; --warn:#FFD07A;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --r:18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(122,167,255,.30), transparent 55%),
+        radial-gradient(900px 500px at 95% 10%, rgba(165,139,255,.22), transparent 52%),
+        radial-gradient(700px 450px at 55% 105%, rgba(110,243,177,.12), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      min-height:100vh;
+    }
+    .wrap{ max-width:1100px; margin:0 auto; padding:18px 16px 36px; }
+
+    .nav-select, .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      padding: 12px 14px;
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .nav-select{ margin-bottom:14px; }
+    .nav-left{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .nav-select label{ font-size:12px; color:var(--muted); white-space:nowrap; }
+    select{
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.14);
+      padding: 8px 10px;
+      border-radius: 14px;
+      cursor:pointer;
+      outline:none;
+    }
+    select:focus{ border-color: rgba(122,167,255,.55); box-shadow: 0 0 0 3px rgba(122,167,255,.15); }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+    .logo{
+      width:38px;height:38px;border-radius: 12px;
+      border: 1px solid var(--stroke);
+      background:
+        radial-gradient(12px 12px at 30% 30%, rgba(255,255,255,.40), transparent 60%),
+        linear-gradient(135deg, rgba(122,167,255,.95), rgba(165,139,255,.75));
+    }
+    .title{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .title h1{ margin:0; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .title p{ margin:0; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .versionTag{
+      font-size:12px;
+      font-weight:800;
+      color:#7AA7FF;
+      margin-left:8px;
+      padding:3px 8px;
+      border-radius:10px;
+      background:rgba(122,167,255,.14);
+      border:1px solid rgba(122,167,255,.35);
+      vertical-align:middle;
+    }
+
+    .grid{ display:grid; gap:14px; margin-top:14px; grid-template-columns: 1fr; }
+    @media (min-width:950px){ .grid{ grid-template-columns: 1.05fr .95fr; } }
+    .card{
+      border: 1px solid var(--stroke);
+      border-radius: var(--r);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 14px;
+    }
+    .card h2{ margin:0 0 10px; font-size:14px; }
+    .sub{ color:var(--muted); font-size:12px; margin-top:-6px; margin-bottom:10px; line-height:1.35; }
+    .fields{ display:grid; gap:10px; grid-template-columns: 1fr 1fr; }
+    .field label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
+    .field input{
+      width:100%; padding:10px 12px; border-radius:14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      outline:none;
+    }
+    .field input:focus{ border-color: rgba(122,167,255,.55); box-shadow: 0 0 0 3px rgba(122,167,255,.15); }
+    .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    button{
+      border:0; padding:10px 12px; border-radius:14px; cursor:pointer;
+      font-weight:750; letter-spacing:.2px;
+    }
+    .btn{
+      background: linear-gradient(135deg, rgba(122,167,255,.95), rgba(165,139,255,.85));
+      color:#061026;
+    }
+    .btn2{
+      background: rgba(255,255,255,.07);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .good{ color:var(--good); font-weight:850; }
+    .warn{ color:var(--warn); font-weight:850; }
+
+    table{
+      width:100%; border-collapse:collapse;
+      border-radius:16px; overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+    }
+    th,td{ padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
+    th{ color:var(--muted); font-size:12px; background: rgba(255,255,255,.03); }
+    tr:last-child td{ border-bottom:0; }
+    .tables{ margin-top:12px; display:grid; gap:12px; grid-template-columns: 1fr; }
+    @media (min-width:950px){ .tables{ grid-template-columns: 1fr 1fr; } }
+
+    .footerNote{ margin-top:10px; color:var(--muted2); font-size:12px; line-height:1.35; }
+
+    .adviceBox{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      border-radius:16px;
+      padding:12px;
+      margin-top: 10px;
+    }
+    .adviceRow{
+      display:flex; flex-direction:column; gap:6px;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      margin-top: 10px;
+    }
+    .adviceRow .name{ color:var(--muted); font-size:12px; }
+    .adviceRow .val{ font-size:14px; font-weight:850; }
+    .adviceRow .tiny{ color:var(--muted2); font-size:11px; line-height:1.25; }
+    a{ color:#7AA7FF; }
+    a:visited{ color:#A58BFF; }
+    a:hover{ color: hotpink; }
+	.softRule{
+  border:0;
+  border-top:1px solid rgba(255,255,255,.10);
+  margin:12px 0;
+}
+  </style>
+
+  <script>
+    // ============================
+    // Shared navigation loaded from nav.json (Option B)
+    // ============================
+    async function renderCalculatorNavFromJson({ currentUrl = "", jsonUrl = "./nav.json" } = {}) {
+      const fallback = [
+        { label: "Select a game", url: "" },
+        { label: "Guns Of Glory", url: "./index.html" },
+        { label: "Last Fortress: Underground", url: "./lfu.html" },
+        { label: "Atlas Earth", url: "./ae.html" },
+      ];
+
+      let games = fallback;
+      try {
+        const resp = await fetch(jsonUrl, { cache: "no-store" });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && Array.isArray(data.games) && data.games.length) games = data.games;
+        }
+      } catch (e) {
+        // fallback menu
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "nav-select";
+      wrap.innerHTML = `
+        <div class="nav-left">
+          <label for="navSelect">Other Resource Calculators:</label>
+          <select id="navSelect" aria-label="Other Resource Calculators"></select>
+        </div>
+        <div class="pill">AB Saved: <b id="abPill">0</b></div>
+      `;
+
+      const select = wrap.querySelector("#navSelect");
+      for (const g of games) {
+        const opt = document.createElement("option");
+        opt.value = g.url;
+        opt.textContent = g.label;
+        if (g.url && g.url === currentUrl) opt.selected = true;
+        select.appendChild(opt);
+      }
+
+      select.addEventListener("change", () => {
+        const url = select.value;
+        if (url) window.location = url;
+        else select.value = currentUrl;
+      });
+
+      document.querySelector(".wrap").insertBefore(wrap, document.querySelector(".wrap").firstChild);
+    }
+
+    // ---------- parsing helpers ----------
+    function digitsOnlyToInt(str){
+      const s = String(str ?? "").replace(/[^\d]/g, "");
+      return s ? parseInt(s, 10) : 0;
+    }
+    function nInt(id){
+      const el = document.getElementById(id);
+      if(!el) return 0;
+      if(id === "ab") return digitsOnlyToInt(el.value);
+      const v = Number(el.value);
+      return Number.isFinite(v) && v > 0 ? Math.floor(v) : 0;
+    }
+
+    function inTier(val, tier){
+      const max = tier.max;
+      return val >= tier.min && (max === null || val <= max);
+    }
+    function pickTier(val, tiers){
+      for(const t of tiers){
+        if(inTier(val, t)) return t;
+      }
+      return null;
+    }
+    function badgePercentFor(badges){
+      const t = pickTier(badges, BADGE_BOOST_TIERS);
+      return t ? (Number(t.percent) || 0) : 0;
+    }
+    function adMultFor(totalParcels){
+      if(totalParcels <= 0) return 1;
+      const t = pickTier(totalParcels, AD_BOOST_TIERS);
+      return t ? (Number(t.mult) || 1) : 1;
+    }
+    function expectedParcelRatePerSec(){
+      const p = RARITY_PROB;
+      const r = PARCEL_RATES_PER_SEC;
+      return (p.common||0)*(r.common||0) +
+             (p.rare||0)*(r.rare||0) +
+             (p.epic||0)*(r.epic||0) +
+             (p.legendary||0)*(r.legendary||0);
+    }
+    function money(x){
+      if(!Number.isFinite(x)) return "$0.000000000000";
+      return "$" + Number(x).toFixed(12);
+    }
+    function setTxt(id, txt){
+      const el = document.getElementById(id);
+      if(el) el.textContent = txt;
+    }
+
+    // ---------- LocalStorage ----------
+    const FIELD_IDS = ["common","rare","epic","legendary","badges","ab"];
+
+    function saveInputs(){
+      const data = {};
+      for(const id of FIELD_IDS){
+        data[id] = document.getElementById(id).value;
+      }
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    }
+    function loadInputs(){
+      try{
+        const raw = localStorage.getItem(SAVE_KEY);
+        if(!raw) return;
+        const data = JSON.parse(raw);
+        for(const id of FIELD_IDS){
+          if(data[id] !== undefined) document.getElementById(id).value = data[id];
+        }
+      } catch {}
+    }
+    function clearSavedInputs(){
+      localStorage.removeItem(SAVE_KEY);
+      for(const id of FIELD_IDS) document.getElementById(id).value = (id === "ab" ? "" : 0);
+      calculate();
+      alert("Saved values cleared for this device/browser.");
+    }
+
+    // ---------- Main calc ----------
+    function calculate(){
+      const common    = nInt("common");
+      const rare      = nInt("rare");
+      const epic      = nInt("epic");
+      const legendary = nInt("legendary");
+      const badges    = nInt("badges");
+      const ab        = nInt("ab");
+
+      const totalParcels = common + rare + epic + legendary;
+
+      const basePerSec =
+        common    * (PARCEL_RATES_PER_SEC.common ?? 0) +
+        rare      * (PARCEL_RATES_PER_SEC.rare ?? 0) +
+        epic      * (PARCEL_RATES_PER_SEC.epic ?? 0) +
+        legendary * (PARCEL_RATES_PER_SEC.legendary ?? 0);
+
+      const badgePct = badgePercentFor(badges);
+      const badgeFactor = 1 + (badgePct / 100);
+      const afterBadgePerSec = basePerSec * badgeFactor;
+
+      const adMult = adMultFor(totalParcels);
+      const afterAdPerSec = afterBadgePerSec * adMult;
+
+      const afterSrbPerSec = afterBadgePerSec * (Number(SRB_MULTIPLIER) || 50);
+
+      // Pills
+      setTxt("totalParcels", totalParcels.toLocaleString());
+      setTxt("badgeLabel", `${badgePct}%`);
+      setTxt("adLabel", totalParcels === 0 ? "—" : `${adMult}×`);
+      setTxt("abPill", ab.toLocaleString());
+
+      // Detail
+      setTxt("detailBase", money(basePerSec));
+      setTxt("detailAfterBadge", money(afterBadgePerSec));
+      setTxt("detailAfterAd", money(afterAdPerSec));
+      setTxt("detailAfterSrb", money(afterSrbPerSec));
+
+      // Tables
+      const normalBody = document.getElementById("normalBody");
+      const srbBody = document.getElementById("srbBody");
+      normalBody.innerHTML = "";
+      srbBody.innerHTML = "";
+
+      for(const d of DURATIONS){
+        const secs = Number(d.seconds) || 0;
+        normalBody.insertAdjacentHTML("beforeend",
+          `<tr><td>${d.label}</td><td class="mono good">${money(afterAdPerSec * secs)}</td><td class="mono">${secs.toLocaleString()}</td></tr>`
+        );
+        srbBody.insertAdjacentHTML("beforeend",
+          `<tr><td>${d.label}</td><td class="mono warn">${money(afterSrbPerSec * secs)}</td><td class="mono">${secs.toLocaleString()}</td></tr>`
+        );
+      }
+
+      renderSpendAllAB({ ab, basePerSec, badges, badgePct, badgeFactor, totalParcels, adMult });
+      saveInputs();
+    }
+
+    function renderSpendAllAB({ ab, basePerSec, badges, badgePct, badgeFactor, totalParcels, adMult }){
+      const parcelsCanBuy = Math.floor(ab / (COSTS_AB.parcel || 100));
+      const badgesCanBuy  = Math.floor(ab / (COSTS_AB.badge || 200));
+
+      setTxt("abParcels", parcelsCanBuy.toLocaleString());
+      setTxt("abBadges", badgesCanBuy.toLocaleString());
+
+      // If buy X parcels (expected rarity)
+      const expParcel = expectedParcelRatePerSec();
+      const baseAfterParcels = basePerSec + parcelsCanBuy * expParcel;
+
+      const parcelsAfter = totalParcels + parcelsCanBuy;
+      const adAfterParcels = adMultFor(parcelsAfter);
+
+      const parcelsBase    = baseAfterParcels * badgeFactor;
+      const parcelsBaseAd  = baseAfterParcels * badgeFactor * adAfterParcels;
+      const parcelsBaseSrb = baseAfterParcels * badgeFactor * (Number(SRB_MULTIPLIER) || 50);
+
+      setTxt("parcelsLineTitle", `If you buy ${parcelsCanBuy.toLocaleString()} parcels (100 AB each)`);
+      setTxt("parcelsRentBase", money(parcelsBase));
+      setTxt("parcelsRentBaseAd", money(parcelsBaseAd));
+      setTxt("parcelsRentBaseSrb", money(parcelsBaseSrb));
+
+      setTxt("parcelsLineTier", `Ad tier: ${totalParcels.toLocaleString()} → ${parcelsAfter.toLocaleString()} (${adMult}× → ${adAfterParcels}×)`);
+      setTxt("parcelsLineNote", `Uses expected rarity (editable). Expected base gain per parcel: ${money(expParcel)} /s (before boosts).`);
+
+      // If buy X badges
+      const badgesAfter = badges + badgesCanBuy;
+      const badgePctAfter = badgePercentFor(badgesAfter);
+      const badgeFactorAfter = 1 + (badgePctAfter / 100);
+
+      const badgesBase    = basePerSec * badgeFactorAfter;
+      const badgesBaseAd  = basePerSec * badgeFactorAfter * adMult;
+      const badgesBaseSrb = basePerSec * badgeFactorAfter * (Number(SRB_MULTIPLIER) || 50);
+
+      setTxt("badgesLineTitle", `If you buy ${badgesCanBuy.toLocaleString()} badges (200 AB each)`);
+      setTxt("badgesRentBase", money(badgesBase));
+      setTxt("badgesRentBaseAd", money(badgesBaseAd));
+      setTxt("badgesRentBaseSrb", money(badgesBaseSrb));
+
+      setTxt("badgesLineTier", `Badge tier: ${badgePct}% → ${badgePctAfter}% (badges: ${badges.toLocaleString()} → ${badgesAfter.toLocaleString()})`);
+      setTxt("badgesLineNote", (badgePctAfter === badgePct) ? "No tier change with this AB (badge boosts are step-based)." : "Tier increased with your available AB.");
+
+      const winner =
+        parcelsBaseAd > badgesBaseAd ? "Parcels" :
+        badgesBaseAd > parcelsBaseAd ? "Badges" : "Tie";
+      setTxt("spendWinner", `With your current AB, higher Base + Ad rent/sec outcome: ${winner}.`);
+    }
+
+    async function hook(){
+      await renderCalculatorNavFromJson({ currentUrl: "./ae.html", jsonUrl: "./nav.json" });
+      loadInputs();
+
+      for(const id of FIELD_IDS){
+        document.getElementById(id).addEventListener("input", calculate);
+      }
+      calculate();
+
+      const v = document.getElementById("ver");
+      if(v) v.textContent = "v" + TOOL_VERSION;
+
+      // Wire footer links (keeps them editable in config)
+      const email = document.getElementById("supportEmail");
+      if(email) email.textContent = SUPPORT_EMAIL;
+      const ch = document.getElementById("changeLink");
+      if(ch) ch.setAttribute("href", CHANGELOG_FILE);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => { hook(); });
+  </script>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>Atlas Earth Rent Calculator <span class="versionTag" id="ver">v3.0</span></h1>
+          <p>GPS parcel rent → badge boost → ad boost → SRB (50×)</p>
+        </div>
+      </div>
+      <div class="pill">Parcels: <b id="totalParcels">0</b></div>
+      <div class="pill">Badge: <b id="badgeLabel">0%</b></div>
+      <div class="pill">Ad: <b id="adLabel">—</b></div>
+    </div>
+
+    <div class="grid">
+      <!-- Inputs -->
+      <div class="card">
+        <h2>Your Values</h2>
+        <div class="sub">Everything updates instantly and saves to your device.</div>
+
+        <div class="fields">
+          <div class="field">
+            <label for="common">Common</label>
+            <input id="common" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="field">
+            <label for="rare">Rare</label>
+            <input id="rare" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="field">
+            <label for="epic">Epic</label>
+            <input id="epic" type="number" min="0" step="1" value="0" />
+          </div>
+          <div class="field">
+            <label for="legendary">Legendary</label>
+            <input id="legendary" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="field">
+            <label for="badges">Badges</label>
+            <input id="badges" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="field">
+            <label for="ab">AB Available (saved)</label>
+            <input id="ab" type="text" inputmode="numeric" placeholder="e.g. 20000" />
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <button class="btn" onclick="calculate()">Recalculate</button>
+          <button class="btn2" onclick="
+            ['common','rare','epic','legendary','badges','ab'].forEach(id=>{
+              document.getElementById(id).value = (id==='ab' ? '' : 0);
+            });
+            calculate();
+          ">Reset</button>
+          <button class="btn2" onclick="clearSavedInputs()">Clear Saved</button>
+        </div>
+
+        <div class="footerNote">
+          <div class="mono">Base: <span id="detailBase">$0.000000000000</span> /s</div>
+          <div class="mono">After badge: <span id="detailAfterBadge">$0.000000000000</span> /s</div>
+          <div class="mono">After badge + ad: <span id="detailAfterAd">$0.000000000000</span> /s</div>
+          <div class="mono">After badge × SRB: <span id="detailAfterSrb">$0.000000000000</span> /s</div>
+        </div>
+
+        <div class="footerNote">
+        </div>
+      </div>
+
+      <!-- Snapshot -->
+      <div class="card">
+        <h2>Snapshot</h2>
+        <div class="sub">Uses your AB to compare “buy parcels” vs “buy badges”.</div>
+
+        <div class="adviceBox">
+          <div class="mono">With your AB you can buy approximately:</div>
+          <div class="mono">• Parcels (100 AB): <b id="abParcels">0</b></div>
+          <div class="mono">• Badges (200 AB): <b id="abBadges">0</b></div>
+
+          <div class="adviceRow">
+            <div class="name" id="parcelsLineTitle">If you buy 0 parcels</div>
+
+            <div class="val mono good">Base: <span id="parcelsRentBase">$0.000000000000</span> /s</div>
+            <div class="val mono good">Base + Ad: <span id="parcelsRentBaseAd">$0.000000000000</span> /s</div>
+            <div class="val mono warn">Base + SRB: <span id="parcelsRentBaseSrb">$0.000000000000</span> /s</div>
+
+            <div class="tiny" id="parcelsLineTier"></div>
+            <div class="tiny" id="parcelsLineNote"></div>
+          </div>
+
+          <div class="adviceRow">
+            <div class="name" id="badgesLineTitle">If you buy 0 badges</div>
+
+            <div class="val mono good">Base: <span id="badgesRentBase">$0.000000000000</span> /s</div>
+            <div class="val mono good">Base + Ad: <span id="badgesRentBaseAd">$0.000000000000</span> /s</div>
+            <div class="val mono warn">Base + SRB: <span id="badgesRentBaseSrb">$0.000000000000</span> /s</div>
+
+            <div class="tiny" id="badgesLineTier"></div>
+            <div class="tiny" id="badgesLineNote"></div>
+          </div>
+
+          <div class="footerNote" id="spendWinner"></div>
+        </div>
+        <div class="footerNote">Base = parcel rent + badge boost.</div>
+      </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="card" style="margin-top:14px;">
+      <h2>Income Projections</h2>
+      <div class="sub">Normal mode (badge + ad) and SRB mode (badge × SRB).</div>
+
+      <div class="tables">
+        <div>
+          <table>
+            <thead>
+              <tr><th colspan="3">Normal (Badge + Ad)</th></tr>
+              <tr><th>Duration</th><th>Income</th><th class="mono">Seconds</th></tr>
+            </thead>
+            <tbody id="normalBody"></tbody>
+          </table>
+        </div>
+
+        <div>
+          <table>
+            <thead>
+              <tr><th colspan="3">SRB (Badge × 50×)</th></tr>
+              <tr><th>Duration</th><th>Income</th><th class="mono">Seconds</th></tr>
+            </thead>
+            <tbody id="srbBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+<hr class="softRule">
+
+<div class="footerNote">
+  Created by: <b>Big Pappa</b> • Suggestions:
+  <span class="mono">russelburgraymond@gmail.com</span><br/>
+  <a href="./AtlasEarthChange.html" target="_blank" rel="noopener">Change Log</a>
+</div>
+</div>
+  </div>
+</body>
+</html>
