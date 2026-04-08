@@ -2,5 +2,5 @@
   "project_name": "Game Resource Calculators",
   "version": "1.0.0",
   "description": "Web-based resource calculators for multiple games including Atlas Earth, Last Fortress Underground, and Guns of Glory.",
-  "category": "Development"
+  "category": "Development"  //     "In-Progress", "Development", "Finished"
 }
